@@ -1,6 +1,6 @@
 import ssl
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def check_tls(domain):
@@ -11,31 +11,43 @@ def check_tls(domain):
         # Stabilisce una connessione TCP verso la porta HTTPS (443)
         with socket.create_connection((domain, 443), timeout=5) as sock:
 
-            # Avvolge la connessione TCP in un layer TLS cifrato
+            # Attiva TLS con SNI (Server Name Indication)
             with context.wrap_socket(sock, server_hostname=domain) as ssock:
 
                 # Recupera il certificato TLS del server
                 cert = ssock.getpeercert()
 
-        # Converte la data di scadenza del certificato in oggetto datetime
-        expiry_date = datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+        # Controllo presenza data di scadenza
+        if 'notAfter' not in cert:
+            return {
+                "valid": False,
+                "error": "Certificato senza data di scadenza",
+                "sni_used": True
+            }
 
-        # Calcola i giorni rimanenti prima della scadenza del certificato
-        days_left = (expiry_date - datetime.utcnow()).days
+        # Converte la data di scadenza in oggetto datetime (UTC)
+        expiry_date = datetime.strptime(
+            cert['notAfter'],
+            '%b %d %H:%M:%S %Y %Z'
+        ).replace(tzinfo=timezone.utc)
 
-        # Recupera l'autorità emittente del certificato
+        # Calcola giorni rimanenti
+        days_left = (expiry_date - datetime.now(timezone.utc)).days
+
+        # Recupera autorità emittente
         issuer = cert.get("issuer")
 
         return {
             "valid": True,
             "expiry_date": str(expiry_date),
             "days_left": days_left,
-            "issuer": issuer
+            "issuer": issuer,
+            "sni_used": True
         }
 
     except Exception as e:
-        # Gestisce errori di connessione, TLS o certificato non valido
         return {
             "valid": False,
-            "error": str(e)
+            "error": str(e),
+            "sni_used": True
         }
