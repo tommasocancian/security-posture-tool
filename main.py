@@ -5,6 +5,7 @@ from modules.virustotal_scan import vt_domain_report
 from modules.crtsh import get_subdomains
 from modules.scoring import calculate_score
 from modules.pdf_report import generate_pdf_report
+from modules.history_manager import save_analysis_history
 import re
 
 def validate_domain(domain):
@@ -131,6 +132,8 @@ def analyze(domain):
         score=score,
         reasons=reasons
     )
+
+    save_analysis_history(domain, data)
 
 
 if __name__ == "__main__":
