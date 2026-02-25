@@ -130,7 +130,9 @@ def generate_pdf_report(
     tls_table = Table([
         ["Valid", str(tls_info.get("valid"))],
         ["Expiry", str(tls_info.get("expiry_date"))],
-        ["Days Left", str(tls_info.get("days_left"))]
+        ["Days Left", str(tls_info.get("days_left"))],
+        ["Issuer", str(tls_info.get("issuer"))],
+        ["SNI Used", str(tls_info.get("sni_used", False))]
     ], colWidths=[150, 300])
 
     tls_table.setStyle(TableStyle([
