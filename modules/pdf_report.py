@@ -101,6 +101,34 @@ def generate_pdf_report(
     # Visualizzazione del punteggio complessivo
     elements.append(Paragraph(f"{score}/100", score_style))
 
+    # ================= EXECUTIVE SUMMARY =================
+
+    elements.append(Paragraph("Executive Summary", section_title))
+
+    risk_level = "LOW"
+
+    if score < 40:
+        risk_level = "HIGH"
+    elif score < 70:
+        risk_level = "MEDIUM"
+
+    summary_table = Table([
+        ["Risk Level", risk_level],
+        ["Total Risks Found", len(reasons) if reasons else 0],
+        ["DNS SPF", str(dns_info.get("spf"))],
+        ["DNS DMARC", str(dns_info.get("dmarc"))],
+        ["TLS Valid", str(tls_info.get("valid"))],
+        ["SNI Enabled", str(tls_info.get("sni_used", False))]
+    ], colWidths=[200, 250])
+
+    summary_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("PADDING", (0, 0), (-1, -1), 10)
+    ]))
+
+    elements.append(summary_table)
+
     # ================= DNS =================
 
     # Sezione sicurezza DNS
