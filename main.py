@@ -118,7 +118,19 @@ def analyze(domain):
 
     # ---------------- PDF REPORT ----------------
     # Genera report PDF con i risultati dell'analisi
-    generate_pdf_report(domain, score, reasons)
+    generate_pdf_report(
+        domain,
+        dns_info={
+            "spf": spf_status,
+            "dmarc": dmarc_status
+        },
+        tls_info=tls_data,
+        shodan_info=shodan_data,
+        vt_info=vt_data,
+        crt_info={"count": len(subs)},
+        score=score,
+        reasons=reasons
+    )
 
 
 if __name__ == "__main__":

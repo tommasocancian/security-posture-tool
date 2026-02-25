@@ -1,45 +1,227 @@
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle
+)
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.enums import TA_CENTER
 import os
 
 
-def generate_pdf_report(domain, score, reasons):
+# Determina il colore dello score in base alla fascia di rischio
+def get_score_color(score):
+    if score >= 70:
+        return colors.green      # Sicurezza buona
+    elif score >= 40:
+        return colors.orange     # Sicurezza media
+    return colors.red            # Sicurezza bassa / critica
 
-    # Genera il nome del file PDF sostituendo i punti nel dominio con underscore
-    # (i punti nei nomi file possono causare problemi in alcuni sistemi)
+
+def generate_pdf_report(
+        domain,
+        dns_info,
+        tls_info,
+        shodan_info,
+        vt_info,
+        crt_info,
+        score,
+        reasons
+):
+
+    # Assicura che la cartella "output" esista prima di generare il PDF
+    os.makedirs("output", exist_ok=True)
+
+    # Costruisce il nome file dinamico basato sul dominio
     filename = f"output/{domain.replace('.', '_')}_report.pdf"
 
-    # Crea il documento PDF
-    doc = SimpleDocTemplate(filename)
+    # Inizializza il documento PDF con margini personalizzati
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
 
-    # Carica gli stili di testo di default per il PDF
-    styles = getSampleStyleSheet()
-
-    # Lista degli elementi che comporranno il contenuto del PDF
+    # Lista degli elementi che verranno inseriti nel PDF
     elements = []
 
+    # ================= STILI =================
+
+    # Stile base per testi normali
+    base_style = ParagraphStyle(
+        name="base",
+        fontSize=12,
+        leading=16,
+        spaceAfter=8
+    )
+
+    # Stile titolo principale del report
+    title_style = ParagraphStyle(
+        name="title",
+        fontSize=26,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue,
+        spaceAfter=20
+    )
+
+    # Stile per i titoli delle sezioni
+    section_title = ParagraphStyle(
+        name="section_title",
+        fontSize=18,
+        textColor=colors.darkblue,
+        spaceBefore=20,
+        spaceAfter=10
+    )
+
+    # Stile dello score principale (dimensione grande e colore dinamico)
+    score_style = ParagraphStyle(
+        name="score",
+        fontSize=48,
+        alignment=TA_CENTER,
+        textColor=get_score_color(score),
+        spaceAfter=20
+    )
+
+    # ================= HEADER =================
+
     # Titolo principale del report
-    elements.append(Paragraph(f"Security Assessment Report", styles["Heading1"]))
+    elements.append(Paragraph("Security Assessment Report", title_style))
 
-    # Informazioni base sul dominio analizzato
-    elements.append(Paragraph(f"Domain: {domain}", styles["Heading2"]))
+    # Dominio analizzato
+    elements.append(Paragraph(f"Domain: {domain}", base_style))
 
-    # Punteggio di sicurezza calcolato
-    elements.append(Paragraph(f"Security Score: {score}/100", styles["Heading2"]))
+    elements.append(Spacer(1, 10))
 
-    # Sezione dei rischi individuati
-    elements.append(Paragraph("Risk Findings:", styles["Heading3"]))
+    # Visualizzazione del punteggio complessivo
+    elements.append(Paragraph(f"{score}/100", score_style))
 
-    # Se sono presenti motivazioni di rischio, le aggiunge come lista
+    # ================= DNS =================
+
+    # Sezione sicurezza DNS
+    elements.append(Paragraph("DNS Security", section_title))
+
+    # Tabella stato SPF e DMARC
+    dns_table = Table([
+        ["SPF", str(dns_info.get("spf"))],
+        ["DMARC", str(dns_info.get("dmarc"))]
+    ], colWidths=[150, 300])
+
+    # Stile tabella DNS
+    dns_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE")
+    ]))
+
+    elements.append(dns_table)
+
+    # ================= TLS =================
+
+    # Sezione certificato TLS
+    elements.append(Paragraph("TLS Certificate", section_title))
+
+    # Tabella informazioni certificato
+    tls_table = Table([
+        ["Valid", str(tls_info.get("valid"))],
+        ["Expiry", str(tls_info.get("expiry_date"))],
+        ["Days Left", str(tls_info.get("days_left"))]
+    ], colWidths=[150, 300])
+
+    tls_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 10)
+    ]))
+
+    elements.append(tls_table)
+
+    # ================= SHODAN =================
+
+    # Sezione intelligence infrastrutturale
+    elements.append(Paragraph("Shodan Intelligence", section_title))
+
+    # Tabella dati OSINT da Shodan
+    shodan_table = Table([
+        ["IP", str(shodan_info.get("ip"))],
+        ["Organization", str(shodan_info.get("org"))],
+        ["OS", str(shodan_info.get("os"))],
+        ["Ports", str(shodan_info.get("ports"))]
+    ], colWidths=[150, 300])
+
+    shodan_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 10)
+    ]))
+
+    elements.append(shodan_table)
+
+    # ================= VIRUSTOTAL =================
+
+    # Sezione reputazione dominio
+    elements.append(Paragraph("VirusTotal Reputation", section_title))
+
+    # Tabella risultati analisi reputazionale
+    vt_table = Table([
+        ["Malicious", str(vt_info.get("malicious"))],
+        ["Suspicious", str(vt_info.get("suspicious"))],
+        ["Harmless", str(vt_info.get("harmless"))]
+    ], colWidths=[150, 300])
+
+    vt_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 10)
+    ]))
+
+    elements.append(vt_table)
+
+    # ================= SUBDOMAINS =================
+
+    # Sezione superficie di attacco (sottodomini)
+    elements.append(Paragraph("Subdomains", section_title))
+
+    elements.append(
+        Paragraph(
+            f"Found {crt_info.get('count')} subdomains",
+            base_style
+        )
+    )
+
+    # ================= RISKS =================
+
+    # Sezione rischi identificati
+    elements.append(Paragraph("Risk Findings", section_title))
+
+    # Se esistono rischi, li mostra in box evidenziati
     if reasons:
         for r in reasons:
-            elements.append(Paragraph(f"- {r}", styles["Normal"]))
-    else:
-        # Caso in cui non siano stati trovati rischi rilevanti
-        elements.append(Paragraph("No major risks detected.", styles["Normal"]))
 
-    # Genera fisicamente il PDF scrivendo tutti gli elementi nel file
+            # Box contenente la descrizione del rischio
+            box = Table([[Paragraph(r, base_style)]], colWidths=[450])
+
+            box.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
+                ("BOX", (0, 0), (-1, -1), 1, colors.red),
+                ("PADDING", (0, 0), (-1, -1), 12)
+            ]))
+
+            elements.append(box)
+            elements.append(Spacer(1, 10))
+
+    else:
+        # Caso in cui non siano stati rilevati rischi significativi
+        elements.append(
+            Paragraph("No major risks detected.", base_style)
+        )
+
+    # ================= BUILD =================
+
+    # Genera fisicamente il documento PDF
     doc.build(elements)
 
-    # Messaggio di conferma a console
+    # Messaggio di conferma su console
     print("\nPDF report generato:", filename)
