@@ -5,7 +5,22 @@ from modules.virustotal_scan import vt_domain_report
 from modules.crtsh import get_subdomains
 from modules.scoring import calculate_score
 from modules.pdf_report import generate_pdf_report
+import re
 
+def validate_domain(domain):
+
+    # Regex per validare un nome dominio:
+    # - almeno un sottodominio
+    # - solo lettere, numeri e trattini
+    # - TLD finale di almeno 2 caratteri
+    pattern = r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+
+    # Controlla se il dominio rispetta il formato atteso
+    if re.match(pattern, domain):
+        return True
+
+    # Dominio non valido
+    return False
 
 def analyze(domain):
 
@@ -109,4 +124,8 @@ def analyze(domain):
 if __name__ == "__main__":
     # Input interattivo dell'utente
     domain = input("Dominio: ")
+    if not validate_domain(domain):
+        print("Dominio non valido")
+        exit()
+        
     analyze(domain)
