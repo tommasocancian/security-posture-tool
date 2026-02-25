@@ -1,34 +1,36 @@
 # Security Posture Assessment Tool
 
 ## Descrizione
+
 Questo progetto consiste nello sviluppo di un tool di analisi della postura di sicurezza di un dominio internet utilizzando tecniche OSINT.
 
 Il sistema permette di analizzare diversi aspetti della sicurezza, tra cui:
 
-- Configurazione DNS (SPF, DMARC, DKIM)
-- Sicurezza dei certificati TLS
-- Reputazione del dominio tramite VirusTotal
-- Esposizione dell’infrastruttura tramite Shodan
-- Analisi della superficie di attacco tramite crt.sh
-- Analisi delle tecnologie web
-- Generazione di report in formato PDF
+* Configurazione DNS (SPF, DMARC, DKIM)
+* Sicurezza dei certificati TLS
+* Reputazione del dominio tramite VirusTotal
+* Esposizione dell’infrastruttura tramite Shodan
+* Analisi della superficie di attacco tramite crt.sh
+* Analisi delle tecnologie web
+* Generazione di report in formato PDF
 
 ## Tecnologie utilizzate
 
-- Python
-- Requests
-- dnspython
-- Shodan API
-- VirusTotal API
-- ReportLab
-- python-dotenv
+* Python
+* Requests
+* dnspython
+* Shodan API
+* VirusTotal API
+* ReportLab
+* python-dotenv
 
 ## Funzionalità principali
 
-- Analisi automatizzata della sicurezza di un dominio
-- Calcolo del security score
-- Generazione report PDF
-- Versionamento del codice tramite Git
+* Analisi automatizzata della sicurezza di un dominio
+* Calcolo del security score
+* Generazione report PDF
+* Generazione history json
+* Versionamento del codice tramite Git
 
 ## Come eseguire il progetto
 
@@ -38,4 +40,6 @@ Il sistema permette di analizzare diversi aspetti della sicurezza, tra cui:
    python main.py
 
 ## Autore
+
 Progetto sviluppato come esercitazione di sicurezza informatica.
+
